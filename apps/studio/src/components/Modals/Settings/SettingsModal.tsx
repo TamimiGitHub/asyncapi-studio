@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { create, useModal } from '@ebay/nice-modal-react';
 
@@ -61,6 +61,9 @@ export const SettingsModal = create<SettingsModalProps>(({ activeTab = 'editor' 
   const [governanceInformations, setGovernanceInformations] = useState(settings.governance.show.informations);
   const [governanceHints, setGovernanceHints] = useState(settings.governance.show.hints);
   const [autoRendering, setAutoRendering] = useState(settings.templates.autoRendering);
+  const [token, setEpToken] = useState(settings.eventportal.token);
+  const [maskedToken, setMaskedToken] = useState('*'.repeat(settings.eventportal.token.length));
+  const [epRegion, setEPRegion] = useState(settings.eventportal.region);
   const [confirmDisabled, setConfirmDisabled] = useState(true);
 
   const createNewState = (): SettingsState => {
@@ -78,6 +81,10 @@ export const SettingsModal = create<SettingsModalProps>(({ activeTab = 'editor' 
       },
       templates: {
         autoRendering,
+      },
+      eventportal: {
+        token,
+        region: epRegion,
       }
     };
   };
@@ -86,7 +93,7 @@ export const SettingsModal = create<SettingsModalProps>(({ activeTab = 'editor' 
     const newState = createNewState();
     const isThisSameObjects = settingsSvc.isEqual(newState);
     setConfirmDisabled(isThisSameObjects);
-  }, [autoSaving, savingDelay, autoRendering, governanceWarnings, governanceInformations, governanceHints]);
+  }, [autoSaving, savingDelay, autoRendering, governanceWarnings, governanceInformations, governanceHints, token, epRegion]);
 
   const onCancel = useCallback(() => {
     modal.hide();
@@ -99,11 +106,17 @@ export const SettingsModal = create<SettingsModalProps>(({ activeTab = 'editor' 
     toast.success(
       <div>
         <span className="block text-bold">
-          Settings succesfully saved!
+          Settings successfully saved!
         </span>
       </div>
     );
     onCancel();
+  };
+
+  const handleTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newToken = e.target.value;
+    setEpToken(newToken);
+    setMaskedToken('*'.repeat(newToken.length));
   };
 
   const tabs: Array<SettingTab> = [
@@ -192,6 +205,69 @@ export const SettingsModal = create<SettingsModalProps>(({ activeTab = 'editor' 
           <div className='text-gray-400 text-xs'>
             Automatic rendering after each change in the document or manually.
           </div>
+        </div>
+      ),
+    },
+    {
+      name: 'eventportal',
+      tab: <span>Solace Event Portal</span>,
+      content: (
+        <div>
+          <div className="flex flex-col mt-4 ">
+            <label className="flex justify-right items-center w-1/2 content-center font-medium text-gray-700">
+              Choose your Solace Cloud Region
+            </label>
+            <select
+              name="region"
+              className="shadow-sm focus:ring-pink-500 focus:border-pink-500 w-1/2 block rounded-md py-1 text-gray-700 border-pink-300 border-2"
+              onChange={e => setEPRegion(e.target.value)}
+              value={epRegion}
+            >
+              <option value="us">US</option>
+              <option value="au">AU</option>
+              <option value="eu">EU</option>
+              <option value="sg">SG</option>
+            </select>
+          </div>
+          <div className="flex flex-col mt-4">
+            <div>
+              Input your Solace Event Portal Token
+            </div>
+            <input
+              name="token"
+              placeholder={token !== '' ? maskedToken : 'Solace PubSub+ Event Portal Token'}
+              className="shadow-sm focus:ring-pink-500 focus:border-pink-500 w-1/2 block sm:text-sm rounded-md p-1 text-gray-700 border-pink-300 border-2"
+              onChange={handleTokenChange}
+              value={maskedToken}
+            />
+          </div>
+          <button
+            className="mt-4 bg-pink-500 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded"
+            onClick={() => {
+              toast.promise(
+                (async function () {
+                  const epURL = epRegion === 'us' ? 'https://api.solace.cloud/api/v0/token/permissions': `https://api.solacecloud.com.${epRegion}/api/v0/token/permissions`;
+                  const response = await fetch(epURL, {
+                    method: 'GET',
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                      'Content-Type': 'application/json'
+                    }
+                  });
+
+                  const result = await response.json();
+                  if (!result.data) {
+                    throw new Error('Token verification failed');
+                  }
+                }()),
+                {
+                  loading: 'Verifying token...',
+                  success: 'Token verified!',
+                  error: 'Token verification failed'
+                }
+              );
+            }}
+          > Verify Token</button>
         </div>
       ),
     },

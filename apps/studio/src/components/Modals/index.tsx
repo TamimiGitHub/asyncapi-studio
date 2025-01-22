@@ -10,3 +10,4 @@ export * from './ImportUUIDModal';
 export * from './NewFileModal';
 export * from './RedirectedModal';
 export * from './ConfirmNewFileModal';
+export * from './EventPortalExportModal';

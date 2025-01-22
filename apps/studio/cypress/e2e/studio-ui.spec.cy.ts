@@ -116,7 +116,7 @@ describe('Studio UI spec', () => {
     cy.get('[data-test="button-dropdown"]').should('be.visible');
   });
 
-  it('Dropdown menu should contain 8 elements with predefined text', () => {
+  it('Dropdown menu should contain 9 elements with predefined text', () => {
     cy.get('[data-test="button-dropdown"]').click();
     cy.contains('Import from URL');
     cy.contains('Import File');
@@ -126,6 +126,7 @@ describe('Studio UI spec', () => {
     cy.contains('Convert and save as JSON');
     cy.contains('Convert to JSON');
     cy.contains('Convert document');
+    cy.contains('Export to Solace Event Portal');
   });
   
   it('Click on Dropdown menu\'s element "Generate code/docs" should open Modal window "Generate code/docs based on your AsyncAPI Document"', () => {

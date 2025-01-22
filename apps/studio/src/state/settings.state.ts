@@ -16,6 +16,10 @@ export type SettingsState = {
   templates: {
     autoRendering: boolean;
   };
+  eventportal: {
+    token: string;
+    region: string;
+  };
 }
 
 export const settingsState = create(
@@ -35,6 +39,10 @@ export const settingsState = create(
       templates: {
         autoRendering: true,
       },
+      eventportal: {
+        token: '',
+        region: 'us',
+      }
     }), 
   {
     name: 'studio-settings',

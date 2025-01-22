@@ -9,6 +9,7 @@ import {
   GeneratorModal,
   ConvertModal,
   ImportUUIDModal,
+  EventPortalExport,
 } from '../Modals';
 import { Dropdown } from '../common';
 
@@ -220,6 +221,17 @@ export const EditorDropdown: React.FunctionComponent<EditorDropdownProps> = () =
     </button>
   );
 
+  const exportEP = (
+    <button
+      type="button"
+      className="px-4 py-1 w-full text-left text-sm rounded-md focus:outline-none transition ease-in-out duration-150"
+      title="Export to Solace Event Portal"
+      onClick={() => show(EventPortalExport)}
+    >
+      Export to Solace Event Portal
+    </button>
+  );
+
   const shareButtonBase64 = (
     <button 
       type="button"
@@ -283,12 +295,17 @@ export const EditorDropdown: React.FunctionComponent<EditorDropdownProps> = () =
             {convertLangAndSaveButton}
           </li>
         </div>
-        <div>
+        <div className="border-b border-gray-700">
           <li className="hover:bg-gray-900">
             {convertLangButton}
           </li>
           <li className="hover:bg-gray-900">
             {convertButton}
+          </li>
+        </div>
+        <div className="border-b border-gray-700">
+          <li className="hover:bg-gray-900">
+            {exportEP}
           </li>
         </div>
       </ul>
