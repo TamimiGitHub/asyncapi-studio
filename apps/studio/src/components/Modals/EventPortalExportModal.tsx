@@ -13,7 +13,7 @@ export const EventPortalExport = create(() => {
   const [specb64, setSpec64] = useState('');
   const [versionStrategy, setVersionStrategy] = useState('MAJOR');
   const [exportsEventsOnly, setExportEventsOnly] = useState(false);
-  const [disableCascadeUpdate, setDisableCascadeUpdate] = useState(true);
+  const [disableCascadeUpdate, setDisableCascadeUpdate] = useState(false);
   
   const IMPORTER_URL = 'https://ep-asyncapi-importer.cfapps.ca10.hana.ondemand.com/importer';
 
