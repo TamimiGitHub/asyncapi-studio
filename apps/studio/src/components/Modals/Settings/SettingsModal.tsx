@@ -65,6 +65,7 @@ export const SettingsModal = create<SettingsModalProps>(({ activeTab = 'editor' 
   const [maskedToken, setMaskedToken] = useState('*'.repeat(settings.eventportal.token.length));
   const [epRegion, setEPRegion] = useState(settings.eventportal.region);
   const [confirmDisabled, setConfirmDisabled] = useState(true);
+  const IMPORTER_URL = 'https://ep-asyncapi-importer.cfapps.ca10.hana.ondemand.com/importer';
 
   const createNewState = (): SettingsState => {
     return {
@@ -246,17 +247,18 @@ export const SettingsModal = create<SettingsModalProps>(({ activeTab = 'editor' 
             onClick={() => {
               toast.promise(
                 (async function () {
-                  const epURL = epRegion === 'us' ? 'https://api.solace.cloud/api/v0/token/permissions': `https://api.solacecloud.com.${epRegion}/api/v0/token/permissions`;
-                  const response = await fetch(epURL, {
-                    method: 'GET',
+                  const response = await fetch(`${IMPORTER_URL}/validate-token?urlRegion=${epRegion}`, {
+                    method: 'POST',
                     headers: {
-                      Authorization: `Bearer ${token}`,
-                      'Content-Type': 'application/json'
-                    }
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      epToken: btoa(token),
+                    }),
                   });
-
                   const result = await response.json();
-                  if (!result.data) {
+                  console.log('result', result);
+                  if (!result.msgs) {
                     throw new Error('Token verification failed');
                   }
                 }()),
