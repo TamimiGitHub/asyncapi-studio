@@ -11,6 +11,11 @@ export const EventPortalExport = create(() => {
   const [token] = useState(settings.eventportal.token);
   const [importDomain, setImportDomain] = useState('');
   const [specb64, setSpec64] = useState('');
+  const [versionStrategy, setVersionStrategy] = useState('MAJOR');
+  const [exportsEventsOnly, setExportEventsOnly] = useState(false);
+  const [disableCascadeUpdate, setDisableCascadeUpdate] = useState(true);
+  
+  const IMPORTER_URL = 'https://ep-asyncapi-importer.cfapps.ca10.hana.ondemand.com/importer';
 
   const exportSpec = () => {
     toast.promise(
@@ -38,7 +43,7 @@ export const EventPortalExport = create(() => {
           });
         };
 
-        const response:any = await fetchWithTimeout(`https://ep-asyncapi-importer.cfapps.ca10.hana.ondemand.com/importer?appDomainId=${appDomainID}`, {
+        const response:any = await fetchWithTimeout(`${IMPORTER_URL}?appDomainId=${appDomainID}&urlRegion=${settings.eventportal.region}&newVersionStrategy=${versionStrategy}&eventsOnly=${exportsEventsOnly}&disableCascadeUpdate=${disableCascadeUpdate}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -62,18 +67,19 @@ export const EventPortalExport = create(() => {
   };
 
   async function getApplicationDomains() {
-    const epURL = settings.eventportal.region === 'us' ? 'https://api.solace.cloud/api/v2': `https://api.solacecloud.com.${settings.eventportal.region}/api/v2`;
-    const response = await fetch(`${epURL}/architecture/applicationDomains`, {
-      method: 'GET',
+    const response = await fetch(`${IMPORTER_URL}/appdomains?urlRegion=${settings.eventportal.region}`, {
+      method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        epToken: btoa(token)
+      })
     });
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
-    }    
-    const domains = (await response.json()).data;
+    }
+    const domains = (await response.json()).applicationDomains;
     setEpAppDomain(domains)
   }
 
@@ -96,7 +102,7 @@ export const EventPortalExport = create(() => {
       title="Export To Solace Event Portal"
       warning={isEPTokenSet() ? null : 'Token not set! Set in Settings -->  Solace Event Portal'}
       confirmText="Export To Solace Event Portal"
-      confirmDisabled={!isEPTokenSet()}
+      confirmDisabled={!isEPTokenSet() || (importDomain === '')} 
       onSubmit={exportSpec}
       closeAfterSumbit={false}
     >
@@ -108,7 +114,7 @@ export const EventPortalExport = create(() => {
           <select
             name="domain"
             className="shadow-sm focus:ring-pink-500 focus:border-pink-500 w-1/2 block rounded-md py-1 text-gray-700 border-pink-300 border-2"
-            onChange={e => setImportDomain(e.target.value)}
+            onChange={e => setImportDomain(e.target.value === 'default' ? '' : e.target.value)}
             value={importDomain}
           >
             <option value="default">Select Domain</option>
@@ -126,21 +132,35 @@ export const EventPortalExport = create(() => {
           <select
             name="increment_strategy"
             className="shadow-sm focus:ring-pink-500 focus:border-pink-500 w-1/2 block rounded-md py-1 text-gray-700 border-pink-300 border-2"
+            onChange={e => setVersionStrategy(e.target.value)}
+            value={versionStrategy}
           >
-            <option value="major">Major</option>
-            <option value="minor">Minor</option>
-            <option value="patch">Patch</option>
+            <option value="MAJOR">Major</option>
+            <option value="MINOR">Minor</option>
+            <option value="PATCH">Patch</option>
           </select>
         </div>
         <div className="flex mt-4">
           <label className="inline-flex justify-between items-center">
-            <input type="checkbox" className="form-checkbox" name='events_only'/>
+            <input 
+              type="checkbox" 
+              className="form-checkbox" 
+              name='events_only' 
+              checked={exportsEventsOnly} 
+              onChange={e => setExportEventsOnly(e.target.checked)} 
+            />
             <span className="ml-2">Export Events only</span>
           </label>
         </div>
         <div className="flex mt-4">
           <label className="inline-flex justify-between items-center">
-            <input type="checkbox" className="form-checkbox" name='cascade'/>
+            <input 
+              type="checkbox" 
+              className="form-checkbox" 
+              name='cascade' 
+              checked={disableCascadeUpdate} 
+              onChange={e => setDisableCascadeUpdate(e.target.checked)} 
+            />
             <span className="ml-2">Disable cascade update</span>
           </label>
         </div>
