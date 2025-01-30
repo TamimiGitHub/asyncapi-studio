@@ -59,7 +59,7 @@ export const EventPortalExport = create(() => {
         }
       }()),
       {
-        loading: 'Exporting spec file to Solace Event Portal...',
+        loading: 'Exporting spec file to Event Portal...',
         success: 'Application exported!',
         error: (err) => err.message,
       },
