@@ -2,212 +2,322 @@ import { create } from 'zustand';
 
 const document = typeof window !== 'undefined' ? localStorage.getItem('document') : undefined
 const schema =
-  document || `asyncapi: 3.0.0
+  document || `---
+components:
+  schemas:
+    Order:
+      $schema: "http://json-schema.org/draft-07/schema#"
+      title: "Order"
+      type: "object"
+      definitions:
+        order_item:
+          type: "object"
+          properties:
+            quantity:
+              description: "Quantity of the item ordered"
+              type: "integer"
+              minimum: 1
+            item_id:
+              description: "Unique identifier for the item"
+              type: "string"
+            price:
+              description: "Price per unit of the item"
+              type: "number"
+              minimum: 0
+          required:
+          - "item_id"
+          - "quantity"
+          - "price"
+        customer:
+          type: "object"
+          properties:
+            name:
+              description: "Name of the customer"
+              type: "string"
+            id:
+              description: "Unique identifier for the customer"
+              type: "string"
+            email:
+              format: "email"
+              description: "Email address of the customer"
+              type: "string"
+          required:
+          - "id"
+          - "name"
+          - "email"
+      properties:
+        order_date:
+          format: "date-time"
+          description: "Date and time when the order was placed"
+          type: "string"
+        total_price:
+          description: "Total price of the order"
+          type: "number"
+          minimum: 0
+        order_id:
+          description: "Unique identifier for the order"
+          type: "string"
+        items:
+          description: "Items included in the order"
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Order/definitions/order_item"
+        customer:
+          description: "Customer placing the order"
+          $ref: "#/components/schemas/Order/definitions/customer"
+        status:
+          description: "Status of the order"
+          type: "string"
+          enum:
+          - "pending"
+          - "processing"
+          - "shipped"
+          - "delivered"
+          - "cancelled"
+      required:
+      - "order_id"
+      - "customer"
+      - "items"
+      - "total_price"
+      - "order_date"
+      - "status"
+    Customer:
+      $schema: "http://json-schema.org/draft-07/schema#"
+      title: "Customer"
+      type: "object"
+      properties:
+        address:
+          type: "object"
+          properties:
+            country:
+              description: "Country"
+              type: "string"
+            city:
+              description: "City"
+              type: "string"
+            street:
+              description: "Street address"
+              type: "string"
+            state:
+              description: "State or province"
+              type: "string"
+            postal_code:
+              description: "Postal or ZIP code"
+              type: "string"
+            country_code:
+              description: "Country Code"
+              type: "string"
+          required:
+          - "street"
+          - "city"
+          - "country"
+        phone:
+          pattern: '^\\+?[0-9]{1,3}-?[0-9]{3,}$'
+          description: "Phone number of the customer"
+          type: "string"
+        name:
+          description: "Name of the customer"
+          type: "string"
+        id:
+          description: "Unique identifier for the customer"
+          type: "string"
+        email:
+          format: "email"
+          description: "Email address of the customer"
+          type: "string"
+      required:
+      - "id"
+      - "name"
+      - "email"
+      - "address"
+    Inventory:
+      $schema: "http://json-schema.org/draft-07/schema#"
+      title: "Inventory"
+      type: "object"
+      properties:
+        items:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              quantity:
+                description: "Quantity of the item available in inventory"
+                type: "integer"
+                minimum: 0
+              price:
+                description: "Price of the item"
+                type: "number"
+                minimum: 0
+              name:
+                description: "Name of the item"
+                type: "string"
+              description:
+                description: "Description of the item"
+                type: "string"
+              id:
+                description: "Unique identifier for the item"
+                type: "string"
+              category:
+                description: "Category of the item"
+                type: "string"
+              added_field1:
+                description: "Added Field 1"
+                type: "string"
+            required:
+            - "id"
+            - "name"
+            - "quantity"
+            - "price"
+      required:
+      - "items"
+  messages:
+    CustomerUpdated:
+      payload:
+        $ref: "#/components/schemas/Customer"
+      description: "Customer Updated Event"
+      schemaFormat: "application/vnd.aai.asyncapi+json;version=2.0.0"
+      contentType: "application/json"
+    CustomerCreated:
+      payload:
+        $ref: "#/components/schemas/Customer"
+      description: "Customer Created Event"
+      schemaFormat: "application/vnd.aai.asyncapi+json;version=2.0.0"
+      contentType: "application/json"
+    OrderCreated:
+      payload:
+        $ref: "#/components/schemas/Order"
+      description: "Order Created Event"
+      schemaFormat: "application/vnd.aai.asyncapi+json;version=2.0.0"
+      contentType: "application/json"
+    OrderUpdated:
+      payload:
+        $ref: "#/components/schemas/Order"
+      description: "Order Updated Event"
+      schemaFormat: "application/vnd.aai.asyncapi+json;version=2.0.0"
+      contentType: "application/json"
+    InventoryHeld:
+      payload:
+        $ref: "#/components/schemas/Inventory"
+      description: "Inventory Held"
+      schemaFormat: "application/vnd.aai.asyncapi+json;version=2.0.0"
+      contentType: "application/json"
+channels:
+  importer/order/created/{orderId}/{IMP_orderStatus}/{customerId}:
+    subscribe:
+      message:
+        $ref: "#/components/messages/OrderCreated"
+    parameters:
+      orderId:
+        schema:
+          type: "string"
+      IMP_orderStatus:
+        schema:
+          type: "string"
+          enum:
+          - "INITIATED"
+          - "PENDING"
+          - "CANCELLED"
+      customerId:
+        schema:
+          type: "string"
+  importer/order/updated/{orderId}/{IMP_orderStatus}/{customerId}:
+    subscribe:
+      message:
+        $ref: "#/components/messages/OrderUpdated"
+    parameters:
+      orderId:
+        schema:
+          type: "string"
+      IMP_orderStatus:
+        schema:
+          type: "string"
+          enum:
+          - "INITIATED"
+          - "PENDING"
+          - "CANCELLED"
+      customerId:
+        schema:
+          type: "string"
+  importer/customer/created/{customerId}/{IMP_regionId}/{IMP_customerStatus}:
+    subscribe:
+      message:
+        $ref: "#/components/messages/CustomerCreated"
+    parameters:
+      customerId:
+        schema:
+          type: "string"
+      IMP_regionId:
+        schema:
+          type: "string"
+          enum:
+          - "CANADA-EAST"
+          - "CANADA-CENTRAL"
+          - "CANADA-WEST"
+      IMP_customerStatus:
+        schema:
+          type: "string"
+          enum:
+          - "BRONZE"
+          - "SILVER"
+          - "GOLD"
+          - "TIN"
+  importer/customer/updated/{customerId}/{IMP_regionId}/{IMP_customerStatus}:
+    subscribe:
+      message:
+        $ref: "#/components/messages/CustomerUpdated"
+    parameters:
+      customerId:
+        schema:
+          type: "string"
+      IMP_regionId:
+        schema:
+          type: "string"
+          enum:
+          - "CANADA-EAST"
+          - "CANADA-CENTRAL"
+          - "CANADA-WEST"
+      IMP_customerStatus:
+        schema:
+          type: "string"
+          enum:
+          - "BRONZE"
+          - "SILVER"
+          - "GOLD"
+          - "TIN"
+  importer/inventory/held/{orderId}/{IMP_regionId}/{IMP_inventoryStatus}:
+    subscribe:
+      message:
+        $ref: "#/components/messages/InventoryHeld"
+    parameters:
+      orderId:
+        schema:
+          type: "string"
+      IMP_regionId:
+        schema:
+          type: "string"
+          enum:
+          - "CANADA-EAST"
+          - "CANADA-CENTRAL"
+          - "CANADA-WEST"
+      IMP_inventoryStatus:
+        schema:
+          type: "string"
+          enum:
+          - "AVAILABLE"
+          - "BACKORDER"
+          - "OUT-OF-STOCK"
+          - "ADDED-STATE-1"
+          - "ADDED-STATE-2"
+asyncapi: "2.5.0"
+defaultContentType: "application/json"
 info:
-  title: Streetlights Kafka API
-  version: 1.0.0
-  description: |-
-    The Smartylighting Streetlights API allows you to remotely manage the city
-    lights.
-    ### Check out its awesome features:
-
-    * Turn a specific streetlight on/off 🌃  
-    * Dim a specific streetlight 😎
-    * Receive real-time information about environmental lighting conditions 📈
+  title: "Solace Acme Retail"
+  version: "1.2.0"
+  description: |
+    Events supporting Online Store applications
   license:
     name: Apache 2.0
-    url: https://www.apache.org/licenses/LICENSE-2.0
-defaultContentType: application/json
-servers:
-  scram-connections:
-    host: test.mykafkacluster.org:18092
-    protocol: kafka-secure
-    description: Test broker secured with scramSha256
-    security:
-      - $ref: '#/components/securitySchemes/saslScram'
-    tags:
-      - name: env:test-scram
-        description: >-
-          This environment is meant for running internal tests through
-          scramSha256
-      - name: kind:remote
-        description: This server is a remote server. Not exposed by the application
-      - name: visibility:private
-        description: This resource is private and only available to certain users
-  mtls-connections:
-    host: test.mykafkacluster.org:28092
-    protocol: kafka-secure
-    description: Test broker secured with X509
-    security:
-      - $ref: '#/components/securitySchemes/certs'
-    tags:
-      - name: env:test-mtls
-        description: This environment is meant for running internal tests through mtls
-      - name: kind:remote
-        description: This server is a remote server. Not exposed by the application
-      - name: visibility:private
-        description: This resource is private and only available to certain users
-channels:
-  lightingMeasured:
-    address: smartylighting.streetlights.1.0.event.{streetlightId}.lighting.measured
-    messages:
-      lightMeasured:
-        $ref: '#/components/messages/lightMeasured'
-    description: The topic on which measured values may be produced and consumed.
-    parameters:
-      streetlightId:
-        $ref: '#/components/parameters/streetlightId'
-  lightTurnOn:
-    address: smartylighting.streetlights.1.0.action.{streetlightId}.turn.on
-    messages:
-      turnOn:
-        $ref: '#/components/messages/turnOnOff'
-    parameters:
-      streetlightId:
-        $ref: '#/components/parameters/streetlightId'
-  lightTurnOff:
-    address: smartylighting.streetlights.1.0.action.{streetlightId}.turn.off
-    messages:
-      turnOff:
-        $ref: '#/components/messages/turnOnOff'
-    parameters:
-      streetlightId:
-        $ref: '#/components/parameters/streetlightId'
-  lightsDim:
-    address: smartylighting.streetlights.1.0.action.{streetlightId}.dim
-    messages:
-      dimLight:
-        $ref: '#/components/messages/dimLight'
-    parameters:
-      streetlightId:
-        $ref: '#/components/parameters/streetlightId'
-operations:
-  receiveLightMeasurement:
-    action: receive
-    channel:
-      $ref: '#/channels/lightingMeasured'
-    summary: >-
-      Inform about environmental lighting conditions of a particular
-      streetlight.
-    traits:
-      - $ref: '#/components/operationTraits/kafka'
-    messages:
-      - $ref: '#/channels/lightingMeasured/messages/lightMeasured'
-  turnOn:
-    action: send
-    channel:
-      $ref: '#/channels/lightTurnOn'
-    traits:
-      - $ref: '#/components/operationTraits/kafka'
-    messages:
-      - $ref: '#/channels/lightTurnOn/messages/turnOn'
-  turnOff:
-    action: send
-    channel:
-      $ref: '#/channels/lightTurnOff'
-    traits:
-      - $ref: '#/components/operationTraits/kafka'
-    messages:
-      - $ref: '#/channels/lightTurnOff/messages/turnOff'
-  dimLight:
-    action: send
-    channel:
-      $ref: '#/channels/lightsDim'
-    traits:
-      - $ref: '#/components/operationTraits/kafka'
-    messages:
-      - $ref: '#/channels/lightsDim/messages/dimLight'
-components:
-  messages:
-    lightMeasured:
-      name: lightMeasured
-      title: Light measured
-      summary: >-
-        Inform about environmental lighting conditions of a particular
-        streetlight.
-      contentType: application/json
-      traits:
-        - $ref: '#/components/messageTraits/commonHeaders'
-      payload:
-        $ref: '#/components/schemas/lightMeasuredPayload'
-    turnOnOff:
-      name: turnOnOff
-      title: Turn on/off
-      summary: Command a particular streetlight to turn the lights on or off.
-      traits:
-        - $ref: '#/components/messageTraits/commonHeaders'
-      payload:
-        $ref: '#/components/schemas/turnOnOffPayload'
-    dimLight:
-      name: dimLight
-      title: Dim light
-      summary: Command a particular streetlight to dim the lights.
-      traits:
-        - $ref: '#/components/messageTraits/commonHeaders'
-      payload:
-        $ref: '#/components/schemas/dimLightPayload'
-  schemas:
-    lightMeasuredPayload:
-      type: object
-      properties:
-        lumens:
-          type: integer
-          minimum: 0
-          description: Light intensity measured in lumens.
-        sentAt:
-          $ref: '#/components/schemas/sentAt'
-    turnOnOffPayload:
-      type: object
-      properties:
-        command:
-          type: string
-          enum:
-            - 'on'
-            - 'off'
-          description: Whether to turn on or off the light.
-        sentAt:
-          $ref: '#/components/schemas/sentAt'
-    dimLightPayload:
-      type: object
-      properties:
-        percentage:
-          type: integer
-          description: Percentage to which the light should be dimmed to.
-          minimum: 0
-          maximum: 100
-        sentAt:
-          $ref: '#/components/schemas/sentAt'
-    sentAt:
-      type: string
-      format: date-time
-      description: Date and time when the message was sent.
-  securitySchemes:
-    saslScram:
-      type: scramSha256
-      description: Provide your username and password for SASL/SCRAM authentication
-    certs:
-      type: X509
-      description: Download the certificate files from service provider
-  parameters:
-    streetlightId:
-      description: The ID of the streetlight.
-  messageTraits:
-    commonHeaders:
-      headers:
-        type: object
-        properties:
-          my-app-header:
-            type: integer
-            minimum: 0
-            maximum: 100
-  operationTraits:
-    kafka:
-      bindings:
-        kafka:
-          clientId:
-            type: string
-            enum:
-              - my-app-id
+    url: "https://www.apache.org/licenses/LICENSE-2.0.html"
 `;
 
 export interface FileStat {

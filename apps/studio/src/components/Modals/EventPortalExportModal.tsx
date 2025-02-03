@@ -14,6 +14,8 @@ export const EventPortalExport = create(() => {
   const [versionStrategy, setVersionStrategy] = useState('MAJOR');
   const [exportsEventsOnly, setExportEventsOnly] = useState(false);
   const [disableCascadeUpdate, setDisableCascadeUpdate] = useState(false);
+  const [showLogs, setShowLogs] = useState<boolean>(false);
+  const [apiLogs, setApiLogs] = useState('');
   
   const IMPORTER_URL = 'https://ep-asyncapi-importer.cfapps.ca10.hana.ondemand.com/importer';
 
@@ -34,10 +36,14 @@ export const EventPortalExport = create(() => {
             fetch(url, options)
               .then(response => {
                 clearTimeout(timer);
+                response.json().then((data:any) => {
+                  setApiLogs(JSON.stringify(data, null, 2))
+                })
                 resolve(response);
               })
               .catch(err => {
                 clearTimeout(timer);
+                setApiLogs(err.message)
                 reject(err);
               });
           });
@@ -102,6 +108,7 @@ export const EventPortalExport = create(() => {
       title="Export To Solace Event Portal"
       warning={isEPTokenSet() ? null : 'Token not set! Set in Settings -->  Solace Event Portal'}
       confirmText="Export To Solace Event Portal"
+      cancelText={apiLogs !== '' ? 'Close' : 'Cancel'}
       confirmDisabled={!isEPTokenSet() || (importDomain === '')} 
       onSubmit={exportSpec}
       closeAfterSumbit={false}
@@ -163,6 +170,18 @@ export const EventPortalExport = create(() => {
             />
             <span className="ml-2">Disable cascade update</span>
           </label>
+        </div>
+        <div>
+          <div>
+            <button type='button' className='text-sm underline text-pink-500' onClick={() => setShowLogs(oldValue => !oldValue)}>
+              {showLogs ? 'Hide logs' : 'Show logs'}
+            </button>
+          </div>
+          {showLogs && (
+            <pre className="text-xs  bg-gray-100 p-2 rounded overflow-x-auto">
+              {apiLogs}
+            </pre>
+          )}
         </div>
       </div>
     </ConfirmModal>
