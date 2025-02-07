@@ -257,7 +257,7 @@ export const SettingsModal = create<SettingsModalProps>(({ activeTab = 'editor' 
                     }),
                   });
                   const result = await response.json();
-                  if (!result.msgs) {
+                  if (result.msgs[0] !== 'SUCCESS') {
                     throw new Error('Token verification failed');
                   }
                 }()),
