@@ -27,6 +27,19 @@ export class EditorService extends AbstractService {
 
   override onInit() {
     this.subcribeToDocuments();
+    this.checkSpecURLParam();
+  }
+
+  private async checkSpecURLParam() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const specURL = urlParams.get('specURL');
+    if (specURL) {
+      try {
+        await this.importFromURL(specURL);
+      } catch (err) {
+        console.error('Failed to import from URL:', err);
+      }
+    }
   }
 
   async onDidCreate(editor: monacoAPI.editor.IStandaloneCodeEditor) {
