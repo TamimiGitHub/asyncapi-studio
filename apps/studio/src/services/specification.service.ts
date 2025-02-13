@@ -1,9 +1,9 @@
 import { AbstractService } from './abstract.service';
 
 import specs from '@asyncapi/specs';
-import { show } from '@ebay/nice-modal-react';
+// import { show } from '@ebay/nice-modal-react';
 
-import { ConvertToLatestModal } from '../components/Modals';
+// import { ConvertToLatestModal } from '../components/Modals';
 
 import { documentsState, settingsState } from '@/state';
 
