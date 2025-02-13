@@ -36,10 +36,11 @@ export class SpecificationService extends AbstractService {
       Object.entries(newDocuments).forEach(([uri, document]) => {
         const oldDocument = oldDocuments[String(uri)];
         if (document === oldDocument) return;
-        const version = document.document?.version();
-        if (version && this.tryInformAboutLatestVersion(version)) {
-          show(ConvertToLatestModal);
-        }
+        // SOLACE: Disable v3 check for now
+        // const version = document.document?.version();
+        // if (version && this.tryInformAboutLatestVersion(version)) {
+        //   show(ConvertToLatestModal);
+        // }
       });
     });
   }
